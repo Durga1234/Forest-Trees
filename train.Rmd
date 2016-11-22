@@ -1,0 +1,120 @@
+---
+title: "Forest_cover_Data"
+author: "Durga Gaddam"
+date: "November 21, 2016"
+output: html_document
+---
+
+###Objective
+The main objective of this project is to visualize the data of forest cover type provided by kaggle and predict the cover type from the train data set provided.
+
+This is a classification problem, We can use any of the following classification algorithms
+
+1) Decision Trees
+2) Random Forests
+3) Support Vector Machines
+4) Neural Networks
+5) K Nearset Neighbour 
+6) Naive Bayes 
+7) XGBoost
+
+
+library(data.table)
+library(dplyr)
+install.packages("moments")
+library(moments)
+install.packages("PerformanceAnalytics")
+library(PerformanceAnalytics)
+library(ggthemes)
+library(ggplot2)
+library(RColorBrewer)
+library(vioplot)
+install.packages("vioplot")
+install.packages("xgboost")
+setwd("F:/R PRACTICE/ForestCover")
+```{r}
+require(data.table)
+require(ggplot2)
+require(moments)
+require(xgboost)
+train <- fread("train.csv", stringsAsFactors = FALSE) 
+train <- train[, Id:=NULL, ]
+train <- train[, Soil_Type15:=NULL]
+train <- train[, Soil_Type7:=NULL]
+test <- fread("test.csv", header = TRUE, stringsAsFactors = FALSE )
+test <- test[, Id:=NULL]
+
+is.data.table(train)
+names(train)
+
+```
+
+Here the Cover_Type is the outcome variable that we are interested in.
+
+```{r}
+dim(train)
+str(train)
+summary(train)
+
+skewness(train)
+
+table(train$Cover_Type)
+```
+
+Since Wilderness_Area and Solid_type are both binary we remove those features for correlation.
+
+```{r}
+
+ggplot(train, aes(Hillshade_9am, Hillshade_3pm ))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+ggplot(train, aes(Horizontal_Distance_To_Hydrology,Vertical_Distance_To_Hydrology))+ geom_point(aes(colour= as.factor(Cover_Type)))+ scale_color_brewer(palette="Set1")
+
+ggplot(train, aes(Aspect, Hillshade_3pm ))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+ggplot(train, aes(Hillshade_Noon, Hillshade_3pm ))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+
+ggplot(train, aes(Slope, Hillshade_Noon))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+
+ggplot(train, aes(Aspect, Hillshade_9am))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+
+ggplot(train, aes(Elevation,Horizontal_Distance_To_Roadways))+
+        geom_point(aes(colour= as.factor(Cover_Type)))+scale_color_brewer(palette="Set1")
+
+xm <- names(train)
+xm
+
+for (i in 1:54)
+{
+print(ggplot(train, aes_string(x=train$Cover_Type, y=xm[i]))+xlab("Cover_Type") + geom_violin(aes(fill= as.factor(Cover_Type))))
+        
+}
+```
+###Prediction
+
+```{r}
+which(lapply(train, sd)==0)
+train <- as.data.frame(train)
+train <- scale(train, center = TRUE)
+head(train)
+
+
+require(randomForest)
+class(train)
+
+names(train)
+train <- as.data.table(train)
+model.random <- randomForest(as.factor(Cover_Type)~., train)
+varImpPlot(model.random)
+test$Cover_Type <- predict(model.random, test, class= "type")
+
+head(test$Cover_Type)
+
+```
